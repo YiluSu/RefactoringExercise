@@ -26,8 +26,8 @@ public class Customer {
 	}
 
 	public String statement() {
-		double totalAmount = 0;
-		int frequentRenterPoints = 0;
+		double totalAmount = totalAmount();
+		int frequentRenterPoints = frequentRenterPoints();
 		Enumeration rentals = _rentals.elements();
 		String result = "Rental Record for " + getName() + "\n";
 		while(rentals.hasMoreElements()) {
@@ -36,16 +36,9 @@ public class Customer {
 			//determine amounts for each line
 			double thisAmount = amountFor(each);
 
-			//add frequent renter points
-			if(each.getMovie().getPriceCode() == Movie.NEW_RELEASE && each.getDaysRented() > 1)
-				frequentRenterPoints += 2;
-			else
-				frequentRenterPoints++;
-
 			//show figures for this rental
 			result += "\t" + each.getMovie().getTitle() + "\t" +
 			String.valueOf(thisAmount) + "\n";
-			totalAmount += thisAmount;
 		}
 
 		//add footer lines
@@ -55,27 +48,57 @@ public class Customer {
 		return result;
 	}
 
+	private int frequentRenterPoints() {
+		int frequentRenterPoints = 0;
+		Enumeration rentals = _rentals.elements();
+		while (rentals.hasMoreElements()) {
+			Rental each = (Rental) rentals.nextElement();
+			frequentRenterPoints = getPriceCode_1Object(
+					each.getMovie().getPriceCode()).frequentRenterPoints(
+					frequentRenterPoints, each);
+		}
+		return frequentRenterPoints;
+	}
+	
+	public double totalAmount() {
+		double totalAmount = 0;
+		Enumeration rentals = _rentals.elements();
+		while(rentals.hasMoreElements()) {
+			Rental each = (Rental)rentals.nextElement();
+			double thisAmount = amountFor(each);
+			totalAmount += thisAmount;
+		}	
+		return totalAmount;
+	}
+
     private double amountFor(Rental aRental) {
         return getCharge(aRental);
     }
 
     public double getCharge(Rental aRental) {
         double result = 0;
-        switch(aRental.getMovie().getPriceCode()) {
-            case Movie.REGULAR:
-               result += 2;
-               if (aRental.getDaysRented() > 2)
-                  result += (aRental.getDaysRented() - 2) * 1.5;
-                  break;
-            case Movie.NEW_RELEASE:
-                result += aRental.getDaysRented() * 3;
-                break;
-            case Movie.CHILDRENS:
-                result += 1.5;
-                if (aRental.getDaysRented() > 3)
-                    result += (aRental.getDaysRented() - 3) * 1.5;
-                break;
-            }
+        result = getPriceCodeObject(aRental.getMovie().getPriceCode())
+				.getCharge(result, aRental);
         return result;
     }
+
+	private PriceCode getPriceCodeObject(int _priceCode) {
+		switch (_priceCode) {
+		case Movie.REGULAR:
+			return new Regular();
+		case Movie.NEW_RELEASE:
+			return new NewRelease();
+		case Movie.CHILDRENS:
+			return new Childrens();
+		}
+		return null;
+	}
+
+	private PriceCode_1 getPriceCode_1Object(int _priceCode) {
+		switch (_priceCode) {
+		case Movie.NEW_RELEASE:
+			return new NewRelease_1();
+		}
+		return null;
+	}
 }
